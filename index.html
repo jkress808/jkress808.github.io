@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Johnny Kress</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <span class="nav-logo">JK</span>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#extracurriculars">Activities</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <p class="hero-greeting fade-in delay-1">Hi, I'm</p>
+      <h1 class="hero-name fade-in delay-2">Johnny Kress</h1>
+      <p class="hero-tagline fade-in delay-3">Statistics Student · Data Analyst · Builder</p>
+      <div class="hero-cta fade-in delay-4">
+        <a href="#projects" class="btn btn-primary">View My Work</a>
+        <a href="#contact" class="btn btn-outline">Get In Touch</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="container">
+      <h2 class="section-title">About Me</h2>
+      <div class="about-grid">
+        <div class="about-image">
+          <img src="https://placehold.co/400x400/111111/FFD700?text=JK" alt="Johnny Kress" />
+        </div>
+        <div class="about-text">
+          <p>
+            I'm a Statistics student at the University of Washington (GPA: 3.77, expected graduation June 2027)
+            with a passion for turning data into actionable insights. My coursework spans statistical computing,
+            data management, probability, and programming, giving me a strong foundation across both theory and application.
+          </p>
+          <p>
+            Outside the classroom, I've applied data skills in real estate as a Licensed Assistant at Windermere R.E.,
+            where I analyze market conditions and client data to drive pricing strategy. I enjoy building things from
+            scratch — whether that's a clustering algorithm in R or a relational database for NFL stats.
+          </p>
+          <a href="Kress Resume.pdf" class="btn btn-primary" target="_blank">Download Resume</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section class="section section-alt" id="projects">
+    <div class="container">
+      <h2 class="section-title">Projects</h2>
+      <div class="projects-grid">
+
+        <div class="card">
+          <div class="card-image">
+            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&q=80&fit=crop" alt="K-Means Clustering" />
+            <span class="card-image-title">K-Means Clustering Algorithm</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">K-Means Clustering Algorithm</h3>
+            <p class="card-desc">Built a k-means clustering algorithm in R from scratch — implementing centroid assignment, iterative optimization, and convergence detection without any built-in clustering functions. Evaluated model quality using the WSS elbow method and stability analysis across multiple random initializations.</p>
+            <div class="card-tags">
+              <span class="tag">R</span>
+              <span class="tag">Statistics</span>
+              <span class="tag">Machine Learning</span>
+            </div>
+            <div class="card-links">
+              <a href="#" class="btn btn-sm btn-outline" target="_blank">GitHub</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-image">
+            <img src="https://images.unsplash.com/photo-1566349872260-a1d88307b698?w=600&q=80&fit=crop" alt="NFL Relational Database" />
+            <span class="card-image-title">NFL Relational Database</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">NFL Relational Database</h3>
+            <p class="card-desc">Designed and implemented a relational database covering 3 seasons of NFL data, enforcing integrity through foreign key constraints and data validation. Wrote complex SQL queries using JOINs, aggregate functions, and subqueries to surface insights on player performance, team stats, and award winners.</p>
+            <div class="card-tags">
+              <span class="tag">SQL</span>
+              <span class="tag">Database Design</span>
+              <span class="tag">Data Analysis</span>
+            </div>
+            <div class="card-links">
+              <a href="#" class="btn btn-sm btn-outline" target="_blank">GitHub</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="section" id="skills">
+    <div class="container">
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-grid">
+
+        <div class="skill-group">
+          <h3>Languages</h3>
+          <ul>
+            <li>Python</li>
+            <li>SQL</li>
+            <li>Java</li>
+            <li>R / RStudio</li>
+            <li>LaTeX</li>
+          </ul>
+        </div>
+
+        <div class="skill-group">
+          <h3>Data &amp; Analysis</h3>
+          <ul>
+            <li>Statistical Modeling</li>
+            <li>K-Means Clustering</li>
+            <li>Relational Databases</li>
+            <li>Data Visualization</li>
+          </ul>
+        </div>
+
+        <div class="skill-group">
+          <h3>Coursework</h3>
+          <ul>
+            <li>Statistical Methods &amp; Computing</li>
+            <li>Data Management</li>
+            <li>Probability</li>
+            <li>Linear Algebra</li>
+            <li>Multivariable Calculus</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- EXTRACURRICULARS -->
+  <section class="section section-alt" id="extracurriculars">
+    <div class="container">
+      <h2 class="section-title">Activities</h2>
+      <div class="projects-grid">
+
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title">UW Kendama Club — Leader</h3>
+            <p class="card-desc">Organized club meetings and taught new players the fundamentals of kendama. Coordinated a trip to Japan for 11 group members to compete in the Kendama World Championship. Launched a fundraiser that raised $2,000+ for the Washington Immigrant Solidarity Network.</p>
+            <div class="card-tags">
+              <span class="tag">Leadership</span>
+              <span class="tag">Event Planning</span>
+              <span class="tag">Fundraising</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section" id="contact">
+    <div class="container contact-container">
+      <h2 class="section-title">Get In Touch</h2>
+      <p class="contact-intro">Have a project in mind or just want to say hello? My inbox is always open.</p>
+      <a href="mailto:Johnnykress808@gmail.com" class="btn btn-primary btn-lg">Say Hello</a>
+
+      <div class="social-links">
+        <a href="https://github.com/" target="_blank" aria-label="GitHub">GitHub</a>
+        <a href="https://linkedin.com/in/" target="_blank" aria-label="LinkedIn">LinkedIn</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>Designed &amp; Built by Johnny Kress &copy; <span id="year"></span></p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

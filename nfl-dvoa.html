@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFL Team DVOA</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0a0a0a;
+      color: #e5e5e5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #eab308;
+      margin-bottom: 32px;
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    #chart-container {
+      background-color: #111111;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6);
+    }
+
+    .axis text {
+      fill: #a3a3a3;
+      font-size: 11px;
+    }
+
+    .axis line,
+    .axis path {
+      stroke: #2a2a2a;
+    }
+
+    .grid line {
+      stroke: #1e1e1e;
+      stroke-dasharray: 3 3;
+    }
+
+    .grid path {
+      stroke: none;
+    }
+
+    .quadrant-line {
+      stroke: #3a3a3a;
+      stroke-width: 1.5;
+      stroke-dasharray: 6 4;
+    }
+
+    .axis-label {
+      fill: #eab308;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    #tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: #1c1c1c;
+      border: 1px solid #eab308;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #e5e5e5;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      z-index: 100;
+      white-space: nowrap;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    }
+
+    #tooltip.visible {
+      opacity: 1;
+    }
+
+    #tooltip .tooltip-team {
+      font-weight: 700;
+      color: #eab308;
+      margin-bottom: 4px;
+    }
+
+    #tooltip .tooltip-stat {
+      color: #d4d4d4;
+    }
+
+    .team-logo {
+      cursor: pointer;
+    }
+
+    .team-logo:hover {
+      filter: drop-shadow(0 0 6px rgba(234, 179, 8, 0.85));
+    }
+  </style>
+</head>
+<body>
+
+  <h1>NFL Team DVOA &mdash; [Season]</h1>
+  <div id="chart-container">
+    <svg id="chart"></svg>
+  </div>
+
+  <div id="tooltip">
+    <div class="tooltip-team" id="tt-team"></div>
+    <div class="tooltip-stat"  id="tt-rush"></div>
+    <div class="tooltip-stat"  id="tt-pass"></div>
+  </div>
+
+  <!-- Play Action Cluster Chart -->
+  <h2 style="font-size:1.3rem;font-weight:600;color:#eab308;margin:52px 0 24px;letter-spacing:0.02em;text-align:center;">
+    Play Action Pass Attempts &mdash; Team Clusters &amp; Average Wins
+  </h2>
+  <div id="pa-chart-container" style="background-color:#111111;border-radius:12px;padding:20px;box-shadow:0 4px 32px rgba(0,0,0,0.6);">
+    <svg id="pa-chart"></svg>
+  </div>
+  <div id="pa-tooltip" style="position:fixed;pointer-events:none;background:#1c1c1c;border:1px solid #eab308;border-radius:8px;padding:10px 14px;font-size:13px;color:#e5e5e5;line-height:1.6;opacity:0;transition:opacity 0.15s ease;z-index:100;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.7);">
+    <div style="font-weight:700;color:#eab308;margin-bottom:4px;" id="pa-tt-team"></div>
+    <div style="color:#d4d4d4;" id="pa-tt-pa"></div>
+    <div style="color:#d4d4d4;" id="pa-tt-wins"></div>
+    <div style="color:#d4d4d4;" id="pa-tt-cluster"></div>
+  </div>
+
+  <script>
+    const teams = [
+      { team: "Arizona Cardinals",    abbr: "ari", rushingDVOA: -5.2,  passingDVOA: -3.1  },
+      { team: "Atlanta Falcons",      abbr: "atl", rushingDVOA:  2.1,  passingDVOA: -8.4  },
+      { team: "Baltimore Ravens",     abbr: "bal", rushingDVOA: 18.3,  passingDVOA: 12.7  },
+      { team: "Buffalo Bills",        abbr: "buf", rushingDVOA:  3.4,  passingDVOA: 32.1  },
+      { team: "Carolina Panthers",    abbr: "car", rushingDVOA: -12.1, passingDVOA: -18.3 },
+      { team: "Chicago Bears",        abbr: "chi", rushingDVOA: -3.5,  passingDVOA: -10.2 },
+      { team: "Cincinnati Bengals",   abbr: "cin", rushingDVOA: -1.2,  passingDVOA: 14.5  },
+      { team: "Cleveland Browns",     abbr: "cle", rushingDVOA:  8.7,  passingDVOA: -5.6  },
+      { team: "Dallas Cowboys",       abbr: "dal", rushingDVOA:  0.3,  passingDVOA:  8.2  },
+      { team: "Denver Broncos",       abbr: "den", rushingDVOA: -2.1,  passingDVOA: -2.3  },
+      { team: "Detroit Lions",        abbr: "det", rushingDVOA: 15.6,  passingDVOA: 22.4  },
+      { team: "Green Bay Packers",    abbr: "gb",  rushingDVOA:  4.2,  passingDVOA: 18.9  },
+      { team: "Houston Texans",       abbr: "hou", rushingDVOA:  1.8,  passingDVOA:  5.3  },
+      { team: "Indianapolis Colts",   abbr: "ind", rushingDVOA:  9.4,  passingDVOA: -4.1  },
+      { team: "Jacksonville Jaguars", abbr: "jax", rushingDVOA: -4.3,  passingDVOA:  1.2  },
+      { team: "Kansas City Chiefs",   abbr: "kc",  rushingDVOA:  6.1,  passingDVOA: 28.7  },
+      { team: "Las Vegas Raiders",    abbr: "lv",  rushingDVOA: -8.2,  passingDVOA: -12.4 },
+      { team: "Los Angeles Chargers", abbr: "lac", rushingDVOA: -0.5,  passingDVOA: 10.1  },
+      { team: "Los Angeles Rams",     abbr: "lar", rushingDVOA:  5.3,  passingDVOA: 16.2  },
+      { team: "Miami Dolphins",       abbr: "mia", rushingDVOA:  7.8,  passingDVOA:  9.6  },
+      { team: "Minnesota Vikings",    abbr: "min", rushingDVOA: -1.9,  passingDVOA: 20.3  },
+      { team: "New England Patriots", abbr: "ne",  rushingDVOA: -6.4,  passingDVOA: -14.7 },
+      { team: "New Orleans Saints",   abbr: "no",  rushingDVOA:  3.7,  passingDVOA: -1.8  },
+      { team: "New York Giants",      abbr: "nyg", rushingDVOA: -7.1,  passingDVOA: -9.3  },
+      { team: "New York Jets",        abbr: "nyj", rushingDVOA:  0.9,  passingDVOA: -6.7  },
+      { team: "Philadelphia Eagles",  abbr: "phi", rushingDVOA: 11.2,  passingDVOA: 24.6  },
+      { team: "Pittsburgh Steelers",  abbr: "pit", rushingDVOA: -0.8,  passingDVOA:  3.4  },
+      { team: "San Francisco 49ers",  abbr: "sf",  rushingDVOA: 13.5,  passingDVOA: 11.8  },
+      { team: "Seattle Seahawks",     abbr: "sea", rushingDVOA:  2.6,  passingDVOA:  6.7  },
+      { team: "Tampa Bay Buccaneers", abbr: "tb",  rushingDVOA: -3.2,  passingDVOA:  7.9  },
+      { team: "Tennessee Titans",     abbr: "ten", rushingDVOA:  4.9,  passingDVOA: -16.2 },
+      { team: "Washington Commanders",abbr: "wsh", rushingDVOA:  8.3,  passingDVOA: 15.4  }
+    ];
+
+    // ---------- Dimensions ----------
+    const logoSize    = 36;
+    const half        = logoSize / 2;
+    const margin      = { top: 30, right: 60, bottom: 70, left: 80 };
+    const innerWidth  = 860;
+    const innerHeight = 620;
+    const totalWidth  = innerWidth  + margin.left + margin.right;
+    const totalHeight = innerHeight + margin.top  + margin.bottom;
+
+    // ---------- SVG ----------
+    const svg = d3.select("#chart")
+      .attr("width",  totalWidth)
+      .attr("height", totalHeight);
+
+    const g = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // ---------- Scales ----------
+    const xExtent = d3.extent(teams, d => d.rushingDVOA);
+    const yExtent = d3.extent(teams, d => d.passingDVOA);
+    const xPad    = (xExtent[1] - xExtent[0]) * 0.09;
+    const yPad    = (yExtent[1] - yExtent[0]) * 0.09;
+
+    const xScale = d3.scaleLinear()
+      .domain([xExtent[0] - xPad, xExtent[1] + xPad])
+      .range([0, innerWidth])
+      .nice();
+
+    const yScale = d3.scaleLinear()
+      .domain([yExtent[0] - yPad, yExtent[1] + yPad])
+      .range([innerHeight, 0])
+      .nice();
+
+    // ---------- Grid ----------
+    g.append("g")
+      .attr("class", "grid")
+      .attr("transform", `translate(0,${innerHeight})`)
+      .call(
+        d3.axisBottom(xScale)
+          .tickSize(-innerHeight)
+          .tickFormat("")
+          .ticks(10)
+      );
+
+    g.append("g")
+      .attr("class", "grid")
+      .call(
+        d3.axisLeft(yScale)
+          .tickSize(-innerWidth)
+          .tickFormat("")
+          .ticks(10)
+      );
+
+    // ---------- Axes ----------
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${innerHeight})`)
+      .call(
+        d3.axisBottom(xScale)
+          .ticks(10)
+          .tickFormat(d => `${d > 0 ? "+" : ""}${d}%`)
+      );
+
+    g.append("g")
+      .attr("class", "axis")
+      .call(
+        d3.axisLeft(yScale)
+          .ticks(10)
+          .tickFormat(d => `${d > 0 ? "+" : ""}${d}%`)
+      );
+
+    // ---------- Axis labels ----------
+    g.append("text")
+      .attr("class", "axis-label")
+      .attr("x", innerWidth / 2)
+      .attr("y", innerHeight + 54)
+      .attr("text-anchor", "middle")
+      .text("Rushing DVOA");
+
+    g.append("text")
+      .attr("class", "axis-label")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -(innerHeight / 2))
+      .attr("y", -64)
+      .attr("text-anchor", "middle")
+      .text("Passing DVOA");
+
+    // ---------- Quadrant lines ----------
+    g.append("line")
+      .attr("class", "quadrant-line")
+      .attr("x1", xScale(0)).attr("x2", xScale(0))
+      .attr("y1", 0).attr("y2", innerHeight);
+
+    g.append("line")
+      .attr("class", "quadrant-line")
+      .attr("x1", 0).attr("x2", innerWidth)
+      .attr("y1", yScale(0)).attr("y2", yScale(0));
+
+    // ---------- Tooltip ----------
+    const tooltip = document.getElementById("tooltip");
+    const ttTeam  = document.getElementById("tt-team");
+    const ttRush  = document.getElementById("tt-rush");
+    const ttPass  = document.getElementById("tt-pass");
+
+    function fmt(v) {
+      return `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
+    }
+
+    function showTooltip(event, d) {
+      ttTeam.textContent = d.team;
+      ttRush.textContent = `Rushing DVOA: ${fmt(d.rushingDVOA)}`;
+      ttPass.textContent = `Passing DVOA: ${fmt(d.passingDVOA)}`;
+      tooltip.classList.add("visible");
+      positionTooltip(event);
+    }
+
+    function positionTooltip(event) {
+      const ox = 16, oy = 12;
+      const tw = tooltip.offsetWidth;
+      const th = tooltip.offsetHeight;
+      let left = event.clientX + ox;
+      let top  = event.clientY + oy;
+      if (left + tw > window.innerWidth  - 8) left = event.clientX - tw - ox;
+      if (top  + th > window.innerHeight - 8) top  = event.clientY - th - oy;
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top  = `${top}px`;
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove("visible");
+    }
+
+    // ---------- Team logos ----------
+    g.selectAll(".team-logo")
+      .data(teams)
+      .join("image")
+        .attr("class", "team-logo")
+        .attr("href",   d => `https://a.espncdn.com/i/teamlogos/nfl/500/${d.abbr}.png`)
+        .attr("x",      d => xScale(d.rushingDVOA) - half)
+        .attr("y",      d => yScale(d.passingDVOA) - half)
+        .attr("width",  logoSize)
+        .attr("height", logoSize)
+        .on("mouseover", showTooltip)
+        .on("mousemove", positionTooltip)
+        .on("mouseleave", hideTooltip);
+  </script>
+
+  <script>
+  // ============================================================
+  //  Play-Action Cluster Chart
+  // ============================================================
+
+  const paData = [
+    { team:"Arizona Cardinals",    abbr:"ari", pa:141, wins:3  },
+    { team:"Atlanta Falcons",      abbr:"atl", pa:107, wins:8  },
+    { team:"Baltimore Ravens",     abbr:"bal", pa:107, wins:8  },
+    { team:"Buffalo Bills",        abbr:"buf", pa:146, wins:12 },
+    { team:"Carolina Panthers",    abbr:"car", pa:111, wins:8  },
+    { team:"Chicago Bears",        abbr:"chi", pa:190, wins:11 },
+    { team:"Cincinnati Bengals",   abbr:"cin", pa:63,  wins:6  },
+    { team:"Cleveland Browns",     abbr:"cle", pa:107, wins:5  },
+    { team:"Dallas Cowboys",       abbr:"dal", pa:127, wins:7  },
+    { team:"Denver Broncos",       abbr:"den", pa:122, wins:14 },
+    { team:"Detroit Lions",        abbr:"det", pa:168, wins:9  },
+    { team:"Green Bay Packers",    abbr:"gb",  pa:141, wins:9  },
+    { team:"Houston Texans",       abbr:"hou", pa:135, wins:12 },
+    { team:"Indianapolis Colts",   abbr:"ind", pa:134, wins:8  },
+    { team:"Jacksonville Jaguars", abbr:"jax", pa:138, wins:13 },
+    { team:"Kansas City Chiefs",   abbr:"kc",  pa:75,  wins:6  },
+    { team:"Las Vegas Raiders",    abbr:"lv",  pa:117, wins:3  },
+    { team:"Los Angeles Chargers", abbr:"lac", pa:116, wins:11 },
+    { team:"Los Angeles Rams",     abbr:"lar", pa:212, wins:12 },
+    { team:"Miami Dolphins",       abbr:"mia", pa:119, wins:7  },
+    { team:"Minnesota Vikings",    abbr:"min", pa:128, wins:9  },
+    { team:"New England Patriots", abbr:"ne",  pa:118, wins:14 },
+    { team:"New Orleans Saints",   abbr:"no",  pa:91,  wins:6  },
+    { team:"New York Giants",      abbr:"nyg", pa:94,  wins:4  },
+    { team:"New York Jets",        abbr:"nyj", pa:101, wins:3  },
+    { team:"Philadelphia Eagles",  abbr:"phi", pa:99,  wins:11 },
+    { team:"Pittsburgh Steelers",  abbr:"pit", pa:109, wins:10 },
+    { team:"San Francisco 49ers",  abbr:"sf",  pa:119, wins:12 },
+    { team:"Seattle Seahawks",     abbr:"sea", pa:131, wins:14 },
+    { team:"Tampa Bay Buccaneers", abbr:"tb",  pa:108, wins:8  },
+    { team:"Tennessee Titans",     abbr:"ten", pa:100, wins:3  },
+    { team:"Washington Commanders",abbr:"wsh", pa:95,  wins:5  }
+  ];
+
+  // ---- Seeded PRNG (LCG) for deterministic k-means ----
+  function mkRng(seed) {
+    let s = seed >>> 0;
+    return () => { s = (Math.imul(1664525, s) + 1013904223) >>> 0; return s / 2 ** 32; };
+  }
+
+  // ---- 1-D k-means (k-means++ init, best of 30 runs) ----
+  function kmeans1D(pts, k, seed) {
+    const rng = mkRng(seed);
+    const n = pts.length;
+    let best = null, bestInertia = Infinity;
+
+    for (let run = 0; run < 30; run++) {
+      const c = [pts[Math.floor(rng() * n)]];
+      while (c.length < k) {
+        const d2  = pts.map(p => Math.min(...c.map(ci => (p - ci) ** 2)));
+        const tot = d2.reduce((a, b) => a + b, 0);
+        let r = rng() * tot, added = false;
+        for (let i = 0; i < n; i++) { r -= d2[i]; if (r <= 0) { c.push(pts[i]); added = true; break; } }
+        if (!added) c.push(pts[Math.floor(rng() * n)]);
+      }
+
+      let labels = new Array(n).fill(0);
+      for (let it = 0; it < 200; it++) {
+        const nl = pts.map(p => { let mD = Infinity, mK = 0; c.forEach((ci, ki) => { const d = (p - ci) ** 2; if (d < mD) { mD = d; mK = ki; } }); return mK; });
+        const same = nl.every((l, i) => l === labels[i]);
+        labels = nl;
+        for (let j = 0; j < k; j++) { const m = pts.filter((_, i) => labels[i] === j); if (m.length) c[j] = m.reduce((a, b) => a + b, 0) / m.length; }
+        if (same) break;
+      }
+
+      const inertia = pts.reduce((s, p, i) => s + (p - c[labels[i]]) ** 2, 0);
+      if (inertia < bestInertia) { bestInertia = inertia; best = { labels: labels.slice(), c: c.slice() }; }
+    }
+    return best;
+  }
+
+  // Cluster and sort: 0=Low, 1=Mid, 2=High by mean PA
+  const paVals = paData.map(d => d.pa);
+  const { labels: rawLabels } = kmeans1D(paVals, 3, 42);
+
+  const rawMeans = [0, 1, 2].map(k => {
+    const m = paVals.filter((_, i) => rawLabels[i] === k);
+    return m.reduce((a, b) => a + b, 0) / m.length;
+  });
+  const sortedKs = [0, 1, 2].sort((a, b) => rawMeans[a] - rawMeans[b]);
+  const paRemap  = {};
+  sortedKs.forEach((origK, rank) => { paRemap[origK] = rank; });
+  paData.forEach((d, i) => { d.cluster = paRemap[rawLabels[i]]; });
+
+  const paClusterNames  = ["Low PA",  "Medium PA", "High PA"];
+  const paClusterColors = ["#60a5fa", "#eab308",   "#f97316"];
+
+  const paGroups   = [0, 1, 2].map(c => paData.filter(d => d.cluster === c));
+  const paAvgWins  = paGroups.map(g => g.reduce((s, d) => s + d.wins, 0) / g.length);
+  const paCentroids = paGroups.map(g => g.reduce((s, d) => s + d.pa, 0) / g.length);
+  const paBound01  = (paCentroids[0] + paCentroids[1]) / 2;
+  const paBound12  = (paCentroids[1] + paCentroids[2]) / 2;
+
+  // ---- Layout ----
+  const paLS   = 34;
+  const paHalf = paLS / 2;
+  const paMar  = { top: 52, right: 50, bottom: 70, left: 60 };
+  const paIW   = 860;
+  const paIH   = 540;
+
+  const paSvg = d3.select("#pa-chart")
+    .attr("width",  paIW + paMar.left + paMar.right)
+    .attr("height", paIH + paMar.top  + paMar.bottom);
+  const paG = paSvg.append("g").attr("transform", `translate(${paMar.left},${paMar.top})`);
+
+  const paX = d3.scaleLinear().domain([50, 225]).range([0, paIW]);
+  const paY = d3.scaleLinear().domain([0, 17]).range([paIH, 0]);
+
+  const paRegions = [
+    { x1: paX(50),       x2: paX(paBound01), cluster: 0 },
+    { x1: paX(paBound01),x2: paX(paBound12), cluster: 1 },
+    { x1: paX(paBound12),x2: paX(225),       cluster: 2 }
+  ];
+
+  // Background shading
+  paRegions.forEach(r => {
+    paG.append("rect")
+      .attr("x", r.x1).attr("y", 0)
+      .attr("width", r.x2 - r.x1).attr("height", paIH)
+      .attr("fill", paClusterColors[r.cluster]).attr("opacity", 0.07);
+  });
+
+  // Grid
+  paG.append("g").attr("class", "grid").attr("transform", `translate(0,${paIH})`)
+    .call(d3.axisBottom(paX).tickSize(-paIH).tickFormat("").ticks(10));
+  paG.append("g").attr("class", "grid")
+    .call(d3.axisLeft(paY).tickSize(-paIW).tickFormat("").ticks(10));
+
+  // Axes
+  paG.append("g").attr("class", "axis").attr("transform", `translate(0,${paIH})`)
+    .call(d3.axisBottom(paX).ticks(10));
+  paG.append("g").attr("class", "axis")
+    .call(d3.axisLeft(paY).ticks(10).tickFormat(d => d));
+
+  // Axis labels
+  paG.append("text").attr("class", "axis-label")
+    .attr("x", paIW / 2).attr("y", paIH + 54).attr("text-anchor", "middle")
+    .text("Play Action Pass Attempts");
+  paG.append("text").attr("class", "axis-label")
+    .attr("transform", "rotate(-90)").attr("x", -(paIH / 2)).attr("y", -44)
+    .attr("text-anchor", "middle").text("Wins");
+
+  // Cluster boundary lines
+  [paBound01, paBound12].forEach(bv => {
+    paG.append("line").attr("class", "quadrant-line")
+      .attr("x1", paX(bv)).attr("x2", paX(bv))
+      .attr("y1", 0).attr("y2", paIH);
+  });
+
+  // Average wins dashed line + label per cluster
+  paRegions.forEach((r, ci) => {
+    const ay = paY(paAvgWins[ci]);
+    paG.append("line")
+      .attr("x1", r.x1).attr("x2", r.x2)
+      .attr("y1", ay).attr("y2", ay)
+      .attr("stroke", paClusterColors[ci]).attr("stroke-width", 2)
+      .attr("stroke-dasharray", "6 4").attr("opacity", 0.9);
+    paG.append("text")
+      .attr("x", (r.x1 + r.x2) / 2).attr("y", ay - 8)
+      .attr("text-anchor", "middle").attr("fill", paClusterColors[ci])
+      .attr("font-size", "12px").attr("font-weight", "600")
+      .text(`Avg ${paAvgWins[ci].toFixed(1)} W`);
+  });
+
+  // Cluster labels + PA range at top
+  paRegions.forEach((r, ci) => {
+    const cx = (r.x1 + r.x2) / 2;
+    paG.append("text").attr("x", cx).attr("y", -28)
+      .attr("text-anchor", "middle").attr("fill", paClusterColors[ci])
+      .attr("font-size", "13px").attr("font-weight", "700")
+      .text(paClusterNames[ci]);
+    const lo = Math.min(...paGroups[ci].map(d => d.pa));
+    const hi = Math.max(...paGroups[ci].map(d => d.pa));
+    paG.append("text").attr("x", cx).attr("y", -12)
+      .attr("text-anchor", "middle").attr("fill", "#a3a3a3").attr("font-size", "10px")
+      .text(`${lo}–${hi} att`);
+  });
+
+  // ---- Linear regression (OLS: wins ~ pa attempts) ----
+  (function() {
+    const n  = paData.length;
+    const mx = paData.reduce((s, d) => s + d.pa,   0) / n;
+    const my = paData.reduce((s, d) => s + d.wins, 0) / n;
+    const ss = paData.reduce((s, d) => s + (d.pa - mx) ** 2, 0);
+    const sp = paData.reduce((s, d) => s + (d.pa - mx) * (d.wins - my), 0);
+    const slope = sp / ss;
+    const intercept = my - slope * mx;
+
+    // R² for annotation
+    const ssTot = paData.reduce((s, d) => s + (d.wins - my) ** 2, 0);
+    const ssRes = paData.reduce((s, d) => s + (d.wins - (slope * d.pa + intercept)) ** 2, 0);
+    const r2 = 1 - ssRes / ssTot;
+
+    const x0 = 50, x1 = 225;
+    const y0 = slope * x0 + intercept;
+    const y1 = slope * x1 + intercept;
+
+    paG.append("line")
+      .attr("x1", paX(x0)).attr("x2", paX(x1))
+      .attr("y1", paY(y0)).attr("y2", paY(y1))
+      .attr("stroke", "#ffffff").attr("stroke-width", 2)
+      .attr("stroke-dasharray", "8 5").attr("opacity", 0.45);
+
+    // Label at right end of line
+    paG.append("text")
+      .attr("x", paX(x1) - 6).attr("y", paY(y1) - 8)
+      .attr("text-anchor", "end").attr("fill", "#a3a3a3")
+      .attr("font-size", "11px")
+      .text(`OLS  R²=${r2.toFixed(2)}`);
+  })();
+
+  // Stagger logos that share the exact same (pa, wins) position
+  paData.forEach(d => { d.xOff = 0; });
+  const paByPos = d3.group(paData, d => `${d.pa},${d.wins}`);
+  paByPos.forEach(grp => {
+    if (grp.length > 1) {
+      grp.forEach((d, i) => { d.xOff = (i - (grp.length - 1) / 2) * (paLS + 4); });
+    }
+  });
+
+  // Tooltip
+  const paTip     = document.getElementById("pa-tooltip");
+  const paTipTeam = document.getElementById("pa-tt-team");
+  const paTipPa   = document.getElementById("pa-tt-pa");
+  const paTipWins = document.getElementById("pa-tt-wins");
+  const paTipClust= document.getElementById("pa-tt-cluster");
+
+  function paShowTip(event, d) {
+    paTipTeam.textContent  = d.team;
+    paTipPa.textContent    = `Play Action Att: ${d.pa}`;
+    paTipWins.textContent  = `Wins: ${d.wins}`;
+    paTipClust.textContent = `Cluster: ${paClusterNames[d.cluster]}`;
+    paTip.style.opacity = "1";
+    paMoveTip(event);
+  }
+  function paMoveTip(event) {
+    const ox = 16, oy = 12, tw = paTip.offsetWidth, th = paTip.offsetHeight;
+    let lx = event.clientX + ox, ty = event.clientY + oy;
+    if (lx + tw > window.innerWidth  - 8) lx = event.clientX - tw - ox;
+    if (ty + th > window.innerHeight - 8) ty = event.clientY - th - oy;
+    paTip.style.left = `${lx}px`; paTip.style.top = `${ty}px`;
+  }
+  function paHideTip() { paTip.style.opacity = "0"; }
+
+  // Team logos
+  paG.selectAll(".pa-logo")
+    .data(paData)
+    .join("image")
+      .attr("class", "team-logo pa-logo")
+      .attr("href",   d => `https://a.espncdn.com/i/teamlogos/nfl/500/${d.abbr}.png`)
+      .attr("x",      d => paX(d.pa) - paHalf + d.xOff)
+      .attr("y",      d => paY(d.wins) - paHalf)
+      .attr("width",  paLS)
+      .attr("height", paLS)
+      .on("mouseover",  paShowTip)
+      .on("mousemove",  paMoveTip)
+      .on("mouseleave", paHideTip);
+  </script>
+</body>
+</html>
