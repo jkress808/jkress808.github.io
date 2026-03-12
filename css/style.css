@@ -454,6 +454,13 @@ img {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
+  body {
+    background-image:
+      linear-gradient(rgba(10, 10, 10, 0.72), rgba(10, 10, 10, 0.72)),
+      url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80&fit=crop');
+    background-attachment: scroll;
+  }
+
   .nav {
     padding: 0.875rem 1.25rem;
   }
