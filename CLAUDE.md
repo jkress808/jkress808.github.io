@@ -10,10 +10,10 @@ To preview: open `index.html` in a browser, or use any static file server (e.g.,
 
 ## File Structure
 
-- `index.html` — single-page site; all sections live here (About, Projects, Skills, Activities, Contact)
+- `index.html` — single-page site; all sections live here (About, Experience, Projects, Skills, Activities, Contact)
 - `css/style.css` — all styles; uses CSS custom properties defined in `:root`
 - `js/main.js` — scroll-based nav highlight, scroll fade-in via IntersectionObserver, nav shrink on scroll
-- `Kress Resume.pdf` — source of truth for bio, projects, skills, and experience content
+- `Johnny Kress Resume 8-20.pdf` — source of truth for bio, projects, skills, and experience content
 
 ## Design System
 
@@ -37,7 +37,7 @@ Defined in `css/style.css` `:root`:
 
 - Email: Johnnykress808@gmail.com
 - GitHub and LinkedIn URLs in the Contact section are placeholder `#` links and need to be filled in.
-- Resume download links to `Kress Resume.pdf` in the project root.
+- Resume download links to `Johnny Kress Resume 8-20.pdf` in the project root.
 
 
 
